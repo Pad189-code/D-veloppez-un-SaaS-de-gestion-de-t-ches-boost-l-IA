@@ -1,0 +1,65 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id            String                @id @default(cuid())
+  email         String                @unique
+  password      String
+  name          String?
+  projects      ProjectCollaborator[]
+  ownedProjects Project[]
+  tasks         Task[]                @relation("AssignedTasks")
+  comments      Comment[]
+  createdAt     DateTime              @default(now())
+}
+
+model Project {
+  id           String                @id @default(cuid())
+  name         String
+  description  String?
+  createdAt    DateTime              @default(now())
+  owner        User                  @relation(fields: [ownerId], references: [id])
+  ownerId      String
+  collaborators ProjectCollaborator[]
+  tasks         Task[]
+}
+
+model ProjectCollaborator {
+  id        String   @id @default(cuid())
+  role      String   @default("CONTRIBUTOR") // "ADMIN" ou "CONTRIBUTOR"
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId String
+
+  @@unique([userId, projectId])
+}
+
+model Task {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  dueDate     DateTime?
+  status      String   @default("TODO") // "TODO", "IN_PROGRESS", "DONE"
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId   String
+  assignees   User[]   @relation("AssignedTasks")
+  comments    Comment[]
+  createdAt   DateTime @default(now())
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  content   String
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  taskId    String
+  author    User     @relation(fields: [authorId], references: [id])
+  authorId  String
+  createdAt DateTime @default(now())
+}

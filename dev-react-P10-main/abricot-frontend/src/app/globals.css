@@ -1,0 +1,77 @@
+@import 'tailwindcss';
+
+:root {
+  /* Couleurs de base */
+  --background: #ffffff;
+  --foreground: #1d1d1b;
+
+  /* Palette Abricot */
+  --color-abricot-50: #fff7ed;
+  --color-abricot-100: #ffedd5;
+  --color-abricot-400: #fb923c;
+  --color-abricot-500: #f97316;
+  --color-abricot-600: #ea580c;
+
+  /* Ne pas redéfinir --font-geist-* ici : ils viennent de next/font sur <html> */
+}
+
+/* C'est ce bloc qui permet à Tailwind de créer les classes text-abricot-xxx */
+@theme {
+  /*
+   * Tailwind v4 inclut par défaut des @font-face (souvent Inter / JetBrains Mono) qui
+   * peuvent échouer en dev (Firefox, autre port, etc.). On force l’usage des variables
+   * injectées par next/font (Geist) avec repli système.
+   */
+  --font-sans:
+    var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
+    'Segoe UI Emoji', 'Segoe UI Symbol';
+  --font-mono:
+    var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    'Liberation Mono', 'Courier New', monospace;
+
+  --color-abricot-50: var(--color-abricot-50);
+  --color-abricot-100: var(--color-abricot-100);
+  --color-abricot-400: var(--color-abricot-400);
+  --color-abricot-500: var(--color-abricot-500);
+  --color-abricot-600: var(--color-abricot-600);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+html {
+  overflow-x: clip;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: clip;
+}
+
+/* Focus visible (WCAG 2.4.7) — anneau contrasté au clavier */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+:focus-visible {
+  outline: 2px solid var(--color-abricot-600, #ea580c);
+  outline-offset: 2px;
+}
+
+/* Modale « Créer une tâche » (Figma) : icône calendrier seule — l’indicateur natif reste cliquable mais invisible */
+.create-task-modal input[type='date']::-webkit-calendar-picker-indicator {
+  position: absolute;
+  right: 0;
+  top: 0;
+  height: 100%;
+  width: 3rem;
+  margin: 0;
+  cursor: pointer;
+  opacity: 0;
+}

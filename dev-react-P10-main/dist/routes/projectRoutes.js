@@ -1,0 +1,27 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const projectController_1 = require("../controllers/projectController");
+const auth_1 = require("../middleware/auth");
+const router = (0, express_1.Router)();
+router.post("/", auth_1.authenticateToken, projectController_1.createProject);
+router.get("/", auth_1.authenticateToken, projectController_1.getProjects);
+router.get("/:id", auth_1.authenticateToken, projectController_1.getProject);
+router.put("/:id", auth_1.authenticateToken, projectController_1.updateProject);
+router.delete("/:id", auth_1.authenticateToken, projectController_1.deleteProject);
+router.post("/:id/contributors", auth_1.authenticateToken, projectController_1.addContributor);
+router.delete("/:id/contributors/:userId", auth_1.authenticateToken, projectController_1.removeContributor);
+const taskController_1 = require("../controllers/taskController");
+router.post("/:id/tasks", auth_1.authenticateToken, taskController_1.createTask);
+router.get("/:id/tasks", auth_1.authenticateToken, taskController_1.getTasks);
+router.get("/:id/tasks/:taskId", auth_1.authenticateToken, taskController_1.getTask);
+router.put("/:id/tasks/:taskId", auth_1.authenticateToken, taskController_1.updateTask);
+router.delete("/:id/tasks/:taskId", auth_1.authenticateToken, taskController_1.deleteTask);
+const commentController_1 = require("../controllers/commentController");
+router.post("/:id/tasks/:taskId/comments", auth_1.authenticateToken, commentController_1.createComment);
+router.get("/:id/tasks/:taskId/comments", auth_1.authenticateToken, commentController_1.getComments);
+router.get("/:id/tasks/:taskId/comments/:commentId", auth_1.authenticateToken, commentController_1.getComment);
+router.put("/:id/tasks/:taskId/comments/:commentId", auth_1.authenticateToken, commentController_1.updateComment);
+router.delete("/:id/tasks/:taskId/comments/:commentId", auth_1.authenticateToken, commentController_1.deleteComment);
+exports.default = router;
+//# sourceMappingURL=projectRoutes.js.map

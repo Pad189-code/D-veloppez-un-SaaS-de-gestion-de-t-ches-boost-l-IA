@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
+import path from "path";
 import swaggerUi from "swagger-ui-express";
 import { PrismaClient } from "@prisma/client";
 import dotenv from "dotenv";
@@ -20,8 +21,11 @@ import { authenticateToken } from "./middleware/auth";
 // Swagger
 import { specs } from "./config/swagger";
 
-// Charger les variables d'environnement
-dotenv.config();
+// Charger .env depuis la racine du projet (évite "injecting env (0)" si cwd/dotenv ne ciblent pas le bon fichier)
+dotenv.config({
+  path: path.join(process.cwd(), ".env"),
+  override: true,
+});
 
 // Initialiser Prisma
 const prisma = new PrismaClient();
@@ -29,8 +33,8 @@ const prisma = new PrismaClient();
 // Créer l'application Express
 const app = express();
 
-// --- CONFIGURATION PORT : Priorité au .env, sinon 3000 ---
-const PORT = process.env.PORT || 3000;
+// --- CONFIGURATION PORT : .env (ex. 8000) pour laisser 3000 au frontend Next ---
+const PORT = process.env.PORT || 8000;
 
 // Middleware de sécurité
 app.use(helmet());
@@ -43,6 +47,7 @@ app.use(
         ? ["https://votre-domaine.com"]
         : [
             "http://localhost:3000",
+            "http://localhost:3001",
             "http://localhost:8000",
             "http://localhost:8001",
           ],
@@ -141,11 +146,25 @@ const startServer = async () => {
     await prisma.$connect();
     console.log("✅ Connexion à la base de données établie (Prisma)");
 
-    app.listen(PORT, () => {
+    const server = app.listen(PORT, () => {
       console.log(`🚀 Serveur démarré sur le port ${PORT}`);
       console.log(`📊 Environnement: ${process.env.NODE_ENV || "development"}`);
       console.log(`🔗 URL: http://localhost:${PORT}`);
       console.log(`📖 Documentation: http://localhost:${PORT}/api-docs`);
+    });
+
+    server.on("error", (err: NodeJS.ErrnoException) => {
+      if (err.code === "EADDRINUSE") {
+        console.error(
+          `❌ Le port ${PORT} est déjà utilisé (une autre instance de l’API ou un autre service).`,
+        );
+        console.error(
+          `   Libérer le port : netstat -ano | findstr :${PORT}  puis  taskkill /PID <pid> /F`,
+        );
+      } else {
+        console.error("❌ Erreur du serveur HTTP:", err);
+      }
+      process.exit(1);
     });
   } catch (error) {
     console.error("❌ Erreur lors du démarrage du serveur:", error);

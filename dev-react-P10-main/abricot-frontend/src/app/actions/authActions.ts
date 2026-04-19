@@ -7,7 +7,7 @@
  */
 
 import bcrypt from 'bcryptjs';
-import { Prisma } from '@prisma/client';
+import { Prisma } from '@prisma-generated';
 import { prisma } from '../../lib/prisma';
 import { redirect } from 'next/navigation';
 import { getSessionPayload, setSession } from '../../lib/session';

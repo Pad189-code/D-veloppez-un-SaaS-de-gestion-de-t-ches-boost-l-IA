@@ -1,9 +1,7 @@
 import { Request, Response } from "express";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "../lib/prismaSingleton";
 import { AuthRequest } from "../types";
 import { sendSuccess, sendError, sendServerError } from "../utils/response";
-
-const prisma = new PrismaClient();
 
 /**
  * @swagger
@@ -224,6 +222,37 @@ export const getProjectsWithTasks = async (
   }
 };
 
+/**
+ * @swagger
+ * /dashboard/stats:
+ *   get:
+ *     summary: Statistiques du tableau de bord (tâches assignées, urgentes, retards, par statut, nombre de projets concernés)
+ *     tags: [Tableau de Bord]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Agrégats pour l'utilisateur connecté
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/Success'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         stats:
+ *                           type: object
+ *                           properties:
+ *                             tasks:
+ *                               type: object
+ *                             projects:
+ *                               type: object
+ *       401:
+ *         description: Non authentifié
+ */
 /**
  * Récupérer les statistiques du tableau de bord
  * GET /dashboard/stats

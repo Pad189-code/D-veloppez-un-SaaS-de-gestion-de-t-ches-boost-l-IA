@@ -1,10 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getTaskComments = void 0;
-const client_1 = require("@prisma/client");
-const prisma = new client_1.PrismaClient();
+const prismaSingleton_1 = require("../lib/prismaSingleton");
 const getTaskComments = async (taskId) => {
-    const comments = await prisma.comment.findMany({
+    const comments = await prismaSingleton_1.prisma.comment.findMany({
         where: { taskId },
         include: {
             author: {

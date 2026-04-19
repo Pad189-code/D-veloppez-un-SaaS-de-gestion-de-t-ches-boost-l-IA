@@ -2,7 +2,8 @@ node_modules
 # Keep environment variables out of version control
 .env
 
-/generated/prisma
+# Généré par `prisma generate` (output personnalisé Prisma 7)
+src/generated/
 
 # Base de données
 *.db

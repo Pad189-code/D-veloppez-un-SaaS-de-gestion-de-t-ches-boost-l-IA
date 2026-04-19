@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "../lib/prismaSingleton";
 import {
   CreateProjectRequest,
   UpdateProjectRequest,
@@ -24,8 +24,6 @@ import {
   sendValidationError,
   sendServerError,
 } from "../utils/response";
-
-const prisma = new PrismaClient();
 
 /**
  * @swagger
@@ -324,6 +322,42 @@ export const getProjects = async (
 };
 
 /**
+ * @swagger
+ * /projects/{id}:
+ *   get:
+ *     summary: Récupérer un projet par identifiant
+ *     tags: [Projets]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Projet trouvé (inclut tâches, collaborateurs, userRole)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/Success'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         project:
+ *                           $ref: '#/components/schemas/Project'
+ *       401:
+ *         description: Non authentifié
+ *       403:
+ *         description: Accès refusé au projet
+ *       404:
+ *         description: Projet introuvable
+ */
+/**
  * Récupérer un projet spécifique
  * GET /projects/:id
  */
@@ -407,6 +441,40 @@ export const getProject = async (
   }
 };
 
+/**
+ * @swagger
+ * /projects/{id}:
+ *   put:
+ *     summary: Mettre à jour un projet (propriétaire ou admin projet)
+ *     tags: [Projets]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Projet mis à jour
+ *       400:
+ *         description: Données invalides
+ *       401:
+ *         description: Non authentifié
+ *       403:
+ *         description: Permissions insuffisantes
+ */
 /**
  * Mettre à jour un projet
  * PUT /projects/:id
@@ -497,6 +565,28 @@ export const updateProject = async (
 };
 
 /**
+ * @swagger
+ * /projects/{id}:
+ *   delete:
+ *     summary: Supprimer un projet (propriétaire uniquement)
+ *     tags: [Projets]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Projet supprimé
+ *       401:
+ *         description: Non authentifié
+ *       403:
+ *         description: Seul le propriétaire peut supprimer
+ */
+/**
  * Supprimer un projet
  * DELETE /projects/:id
  */
@@ -537,6 +627,48 @@ export const deleteProject = async (
   }
 };
 
+/**
+ * @swagger
+ * /projects/{id}/contributors:
+ *   post:
+ *     summary: Ajouter un contributeur au projet
+ *     tags: [Projets]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               role:
+ *                 type: string
+ *                 enum: [ADMIN, CONTRIBUTOR]
+ *                 default: CONTRIBUTOR
+ *     responses:
+ *       200:
+ *         description: Contributeur ajouté
+ *       401:
+ *         description: Non authentifié
+ *       403:
+ *         description: Droits de gestion des membres requis
+ *       404:
+ *         description: Projet ou utilisateur introuvable
+ *       409:
+ *         description: Déjà membre ou conflit métier
+ */
 /**
  * Ajouter un contributeur à un projet
  * POST /projects/:id/contributors
@@ -625,6 +757,37 @@ export const addContributor = async (
   }
 };
 
+/**
+ * @swagger
+ * /projects/{id}/contributors/{userId}:
+ *   delete:
+ *     summary: Retirer un contributeur du projet
+ *     tags: [Projets]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Contributeur retiré
+ *       400:
+ *         description: Impossible de retirer le propriétaire
+ *       401:
+ *         description: Non authentifié
+ *       403:
+ *         description: Droits insuffisants
+ *       404:
+ *         description: Projet introuvable
+ */
 /**
  * Retirer un contributeur d'un projet
  * DELETE /projects/:id/contributors/:userId

@@ -4,9 +4,9 @@ export declare const getTaskAssignments: (taskId: string) => Promise<{
     id: string;
     assignedAt: Date | null;
     user: {
-        email: string;
         name: string | null;
         id: string;
+        email: string;
     };
 }[]>;
 //# sourceMappingURL=taskAssignments.d.ts.map

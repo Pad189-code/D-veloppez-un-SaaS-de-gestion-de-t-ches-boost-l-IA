@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "../lib/prismaSingleton";
 import { CreateTaskRequest, UpdateTaskRequest, AuthRequest } from "../types";
 import {
   validateCreateTaskData,
@@ -22,8 +22,6 @@ import {
 } from "../utils/taskAssignments";
 import { getTaskComments } from "../utils/taskComments";
 
-const prisma = new PrismaClient();
-
 const taskInclude = {
   project: {
     select: {
@@ -40,6 +38,53 @@ const taskInclude = {
   },
 } as const;
 
+/**
+ * @swagger
+ * /projects/{id}/tasks:
+ *   post:
+ *     summary: Créer une tâche dans un projet
+ *     tags: [Projets]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Identifiant du projet
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - title
+ *             properties:
+ *               title:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               dueDate:
+ *                 type: string
+ *                 format: date-time
+ *               assigneeIds:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *     responses:
+ *       201:
+ *         description: Tâche créée
+ *       400:
+ *         description: Validation ou assignés invalides
+ *       401:
+ *         description: Non authentifié
+ *       403:
+ *         description: Pas d'accès ou pas le droit de créer des tâches
+ *       404:
+ *         description: Projet introuvable
+ */
 /**
  * Créer une nouvelle tâche
  * POST /projects/:projectId/tasks
@@ -163,10 +208,37 @@ export const createTask = async (
  * /projects/{id}/tasks:
  *   get:
  *     summary: Récupérer toutes les tâches d'un projet
- *     description: Retourne la liste complète des tâches associées à un projet spécifique, incluant les assignations et les commentaires
+ *     description: Liste des tâches avec assignations et commentaires
  *     tags: [Projets]
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/Success'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         tasks:
+ *                           type: array
+ *                           items:
+ *                             $ref: '#/components/schemas/Task'
+ *       401:
+ *         description: Non authentifié
+ *       403:
+ *         description: Accès refusé au projet
  */
 export const getTasks = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -211,6 +283,107 @@ export const getTasks = async (req: Request, res: Response): Promise<void> => {
   }
 };
 
+/**
+ * @swagger
+ * /projects/{id}/tasks/{taskId}:
+ *   get:
+ *     summary: Récupérer une tâche par identifiant
+ *     tags: [Projets]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: taskId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Tâche trouvée
+ *       401:
+ *         description: Non authentifié
+ *       403:
+ *         description: Accès refusé
+ *       404:
+ *         description: Tâche introuvable
+ *   put:
+ *     summary: Mettre à jour une tâche
+ *     tags: [Projets]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: taskId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               title:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               status:
+ *                 type: string
+ *                 enum: [TODO, IN_PROGRESS, DONE, CANCELLED]
+ *               dueDate:
+ *                 type: string
+ *                 format: date-time
+ *               assigneeIds:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *     responses:
+ *       200:
+ *         description: Tâche mise à jour
+ *       400:
+ *         description: Données invalides
+ *       401:
+ *         description: Non authentifié
+ *       403:
+ *         description: Pas le droit de modifier les tâches
+ *       404:
+ *         description: Tâche introuvable
+ *   delete:
+ *     summary: Supprimer une tâche
+ *     tags: [Projets]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: taskId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Tâche supprimée
+ *       401:
+ *         description: Non authentifié
+ *       403:
+ *         description: Pas le droit de supprimer
+ *       404:
+ *         description: Tâche introuvable
+ */
 /**
  * Récupérer une tâche spécifique
  * GET /projects/:projectId/tasks/:taskId

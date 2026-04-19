@@ -1,6 +1,4 @@
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import { prisma } from "../lib/prismaSingleton";
 
 /**
  * Vérifie que chaque utilisateur est le propriétaire du projet ou un collaborateur.

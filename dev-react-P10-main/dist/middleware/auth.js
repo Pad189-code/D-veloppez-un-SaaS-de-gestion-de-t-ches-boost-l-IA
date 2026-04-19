@@ -1,10 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.optionalAuth = exports.authenticateToken = void 0;
-const client_1 = require("@prisma/client");
+const prismaSingleton_1 = require("../lib/prismaSingleton");
 const jwt_1 = require("../utils/jwt");
 const response_1 = require("../utils/response");
-const prisma = new client_1.PrismaClient();
 const authenticateToken = async (req, res, next) => {
     try {
         const authHeader = req.headers.authorization;
@@ -14,7 +13,7 @@ const authenticateToken = async (req, res, next) => {
             return;
         }
         const decoded = (0, jwt_1.verifyToken)(token);
-        const user = await prisma.user.findUnique({
+        const user = await prismaSingleton_1.prisma.user.findUnique({
             where: { id: decoded.userId },
             select: {
                 id: true,
@@ -53,7 +52,7 @@ const optionalAuth = async (req, res, next) => {
             return;
         }
         const decoded = (0, jwt_1.verifyToken)(token);
-        const user = await prisma.user.findUnique({
+        const user = await prismaSingleton_1.prisma.user.findUnique({
             where: { id: decoded.userId },
             select: {
                 id: true,

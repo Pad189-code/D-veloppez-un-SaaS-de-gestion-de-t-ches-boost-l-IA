@@ -1,11 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.searchUsers = exports.removeContributor = exports.addContributor = exports.deleteProject = exports.updateProject = exports.getProject = exports.getProjects = exports.createProject = void 0;
-const client_1 = require("@prisma/client");
+const prismaSingleton_1 = require("../lib/prismaSingleton");
 const validation_1 = require("../utils/validation");
 const permissions_1 = require("../utils/permissions");
 const response_1 = require("../utils/response");
-const prisma = new client_1.PrismaClient();
 const createProject = async (req, res) => {
     try {
         const { name, description, contributors } = req.body;
@@ -23,7 +22,7 @@ const createProject = async (req, res) => {
             (0, response_1.sendValidationError)(res, "Données de création de projet invalides", validationErrors);
             return;
         }
-        const project = await prisma.project.create({
+        const project = await prismaSingleton_1.prisma.project.create({
             data: {
                 name: name.trim(),
                 description: description?.trim() || null,
@@ -51,7 +50,7 @@ const createProject = async (req, res) => {
             },
         });
         if (contributors && contributors.length > 0) {
-            const contributorUsers = await prisma.user.findMany({
+            const contributorUsers = await prismaSingleton_1.prisma.user.findMany({
                 where: {
                     email: {
                         in: contributors.map((email) => email.toLowerCase()),
@@ -65,7 +64,7 @@ const createProject = async (req, res) => {
             if (contributorUsers.length > 0) {
                 for (const user of contributorUsers) {
                     try {
-                        await prisma.projectCollaborator.create({
+                        await prismaSingleton_1.prisma.projectCollaborator.create({
                             data: {
                                 userId: user.id,
                                 projectId: project.id,
@@ -79,7 +78,7 @@ const createProject = async (req, res) => {
                 }
             }
         }
-        const projectWithMembers = await prisma.project.findUnique({
+        const projectWithMembers = await prismaSingleton_1.prisma.project.findUnique({
             where: { id: project.id },
             include: {
                 owner: {
@@ -122,7 +121,7 @@ const getProjects = async (req, res) => {
             (0, response_1.sendError)(res, "Utilisateur non authentifié", "UNAUTHORIZED", 401);
             return;
         }
-        const projects = await prisma.project.findMany({
+        const projects = await prismaSingleton_1.prisma.project.findMany({
             where: {
                 OR: [
                     { ownerId: authReq.user.id },
@@ -194,7 +193,7 @@ const getProject = async (req, res) => {
             (0, response_1.sendError)(res, "Accès refusé au projet", "FORBIDDEN", 403);
             return;
         }
-        const project = await prisma.project.findUnique({
+        const project = await prismaSingleton_1.prisma.project.findUnique({
             where: { id },
             include: {
                 owner: {
@@ -277,7 +276,7 @@ const updateProject = async (req, res) => {
         if (description !== undefined) {
             updateData.description = description?.trim() || null;
         }
-        const updatedProject = await prisma.project.update({
+        const updatedProject = await prismaSingleton_1.prisma.project.update({
             where: { id },
             data: updateData,
             include: {
@@ -329,7 +328,7 @@ const deleteProject = async (req, res) => {
             (0, response_1.sendError)(res, "Vous n'avez pas les permissions pour supprimer ce projet", "FORBIDDEN", 403);
             return;
         }
-        await prisma.project.delete({
+        await prismaSingleton_1.prisma.project.delete({
             where: { id },
         });
         (0, response_1.sendSuccess)(res, "Projet supprimé avec succès");
@@ -354,12 +353,12 @@ const addContributor = async (req, res) => {
             (0, response_1.sendError)(res, "Vous n'avez pas les permissions pour gérer les contributeurs de ce projet", "FORBIDDEN", 403);
             return;
         }
-        const project = await prisma.project.findUnique({ where: { id } });
+        const project = await prismaSingleton_1.prisma.project.findUnique({ where: { id } });
         if (!project) {
             (0, response_1.sendError)(res, "Projet non trouvé", "PROJECT_NOT_FOUND", 404);
             return;
         }
-        const user = await prisma.user.findUnique({
+        const user = await prismaSingleton_1.prisma.user.findUnique({
             where: { email: email.toLowerCase() },
         });
         if (!user) {
@@ -370,7 +369,7 @@ const addContributor = async (req, res) => {
             (0, response_1.sendError)(res, "Le propriétaire du projet est déjà membre du projet", "USER_ALREADY_MEMBER", 409);
             return;
         }
-        const existingMember = await prisma.projectCollaborator.findUnique({
+        const existingMember = await prismaSingleton_1.prisma.projectCollaborator.findUnique({
             where: {
                 userId_projectId: {
                     userId: user.id,
@@ -382,7 +381,7 @@ const addContributor = async (req, res) => {
             (0, response_1.sendError)(res, "L'utilisateur est déjà membre de ce projet", "USER_ALREADY_MEMBER", 409);
             return;
         }
-        await prisma.projectCollaborator.create({
+        await prismaSingleton_1.prisma.projectCollaborator.create({
             data: {
                 userId: user.id,
                 projectId: id,
@@ -410,7 +409,7 @@ const removeContributor = async (req, res) => {
             (0, response_1.sendError)(res, "Vous n'avez pas les permissions pour gérer les contributeurs de ce projet", "FORBIDDEN", 403);
             return;
         }
-        const project = await prisma.project.findUnique({ where: { id } });
+        const project = await prismaSingleton_1.prisma.project.findUnique({ where: { id } });
         if (!project) {
             (0, response_1.sendError)(res, "Projet non trouvé", "PROJECT_NOT_FOUND", 404);
             return;
@@ -424,7 +423,7 @@ const removeContributor = async (req, res) => {
             (0, response_1.sendError)(res, "Le propriétaire du projet ne peut pas se retirer", "CANNOT_REMOVE_OWNER", 400);
             return;
         }
-        await prisma.projectCollaborator.deleteMany({
+        await prismaSingleton_1.prisma.projectCollaborator.deleteMany({
             where: {
                 userId,
                 projectId: id,
@@ -455,7 +454,7 @@ const searchUsers = async (req, res) => {
             (0, response_1.sendError)(res, "La recherche doit contenir au moins 2 caractères", "INVALID_QUERY", 400);
             return;
         }
-        const users = await prisma.user.findMany({
+        const users = await prismaSingleton_1.prisma.user.findMany({
             where: {
                 OR: [
                     {

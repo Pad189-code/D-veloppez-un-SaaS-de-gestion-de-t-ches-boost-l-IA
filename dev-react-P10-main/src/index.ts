@@ -4,15 +4,13 @@ import helmet from "helmet";
 import morgan from "morgan";
 import path from "path";
 import swaggerUi from "swagger-ui-express";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "./lib/prismaSingleton";
 import dotenv from "dotenv";
 
 // Routes
 import authRoutes from "./routes/authRoutes";
 import projectRoutes from "./routes/projectRoutes";
 import dashboardRoutes from "./routes/dashboardRoutes";
-import taskRoutes from "./routes/taskRoutes"; // Importé
-import commentRoutes from "./routes/commentRoutes"; // Importé
 import { searchUsers } from "./controllers/projectController";
 
 // Middleware
@@ -27,11 +25,41 @@ dotenv.config({
   override: true,
 });
 
-// Initialiser Prisma
-const prisma = new PrismaClient();
-
 // Créer l'application Express
 const app = express();
+
+/**
+ * @swagger
+ * tags:
+ *   - name: Système
+ *     description: Endpoints publics (santé, métadonnées)
+ * /health:
+ *   get:
+ *     tags: [Système]
+ *     summary: Vérifier que l'API répond
+ *     responses:
+ *       200:
+ *         description: Service disponible
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success: { type: boolean, example: true }
+ *                 message: { type: string }
+ *                 timestamp: { type: string, format: date-time }
+ * /:
+ *   get:
+ *     tags: [Système]
+ *     summary: Liste des préfixes d'endpoints principaux
+ *     responses:
+ *       200:
+ *         description: Métadonnées de l'API
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ */
 
 // --- CONFIGURATION PORT : .env (ex. 8000) pour laisser 3000 au frontend Next ---
 const PORT = process.env.PORT || 8000;
@@ -77,8 +105,6 @@ app.use(
 app.use("/auth", authRoutes);
 app.use("/projects", projectRoutes);
 app.use("/dashboard", dashboardRoutes);
-app.use("/tasks", taskRoutes); // Ajouté
-app.use("/comments", commentRoutes); // Ajouté
 
 // Route pour la recherche d'utilisateurs
 app.get("/users/search", authenticateToken, searchUsers);
@@ -103,8 +129,7 @@ app.get("/", (req, res) => {
       auth: "/auth",
       projects: "/projects",
       dashboard: "/dashboard",
-      tasks: "/tasks",
-      comments: "/comments",
+      usersSearch: "/users/search",
       health: "/health",
       documentation: "/api-docs",
     },

@@ -1,7 +1,5 @@
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "../lib/prismaSingleton";
 import { ProjectRole } from "../types";
-
-const prisma = new PrismaClient();
 
 /**
  * Rôle effectif : propriétaire, admin de projet, contributeur, ou pas d'accès.

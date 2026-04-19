@@ -5,11 +5,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.updatePassword = exports.updateProfile = exports.getProfile = exports.login = exports.register = void 0;
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
-const client_1 = require("@prisma/client");
+const prismaSingleton_1 = require("../lib/prismaSingleton");
 const validation_1 = require("../utils/validation");
 const jwt_1 = require("../utils/jwt");
 const response_1 = require("../utils/response");
-const prisma = new client_1.PrismaClient();
 const register = async (req, res) => {
     try {
         const { email, password, name } = req.body;
@@ -18,7 +17,7 @@ const register = async (req, res) => {
             (0, response_1.sendValidationError)(res, "Données d'inscription invalides", validationErrors);
             return;
         }
-        const existingUser = await prisma.user.findUnique({
+        const existingUser = await prismaSingleton_1.prisma.user.findUnique({
             where: { email: email.toLowerCase() },
         });
         if (existingUser) {
@@ -27,7 +26,7 @@ const register = async (req, res) => {
         }
         const saltRounds = 12;
         const hashedPassword = await bcryptjs_1.default.hash(password, saltRounds);
-        const newUser = await prisma.user.create({
+        const newUser = await prismaSingleton_1.prisma.user.create({
             data: {
                 email: email.toLowerCase(),
                 password: hashedPassword,
@@ -60,7 +59,7 @@ const login = async (req, res) => {
             (0, response_1.sendValidationError)(res, "Données de connexion invalides", validationErrors);
             return;
         }
-        const user = await prisma.user.findUnique({
+        const user = await prismaSingleton_1.prisma.user.findUnique({
             where: { email: email.toLowerCase() },
         });
         if (!user) {
@@ -68,8 +67,6 @@ const login = async (req, res) => {
             return;
         }
         const isPasswordValid = await bcryptjs_1.default.compare(password, user.password);
-        console.log("password", password);
-        console.log("user.password", user.password);
         if (!isPasswordValid) {
             (0, response_1.sendError)(res, "Email ou mot de passe incorrect", "INVALID_CREDENTIALS", 401);
             return;
@@ -121,7 +118,7 @@ const updateProfile = async (req, res) => {
             return;
         }
         if (email && email.toLowerCase() !== authReq.user.email.toLowerCase()) {
-            const existingUser = await prisma.user.findUnique({
+            const existingUser = await prismaSingleton_1.prisma.user.findUnique({
                 where: { email: email.toLowerCase() },
             });
             if (existingUser) {
@@ -136,7 +133,7 @@ const updateProfile = async (req, res) => {
         if (email !== undefined) {
             updateData.email = email.toLowerCase();
         }
-        const updatedUser = await prisma.user.update({
+        const updatedUser = await prismaSingleton_1.prisma.user.update({
             where: { id: authReq.user.id },
             data: updateData,
             select: {
@@ -170,7 +167,7 @@ const updatePassword = async (req, res) => {
             (0, response_1.sendValidationError)(res, "Données de mise à jour du mot de passe invalides", validationErrors);
             return;
         }
-        const user = await prisma.user.findUnique({
+        const user = await prismaSingleton_1.prisma.user.findUnique({
             where: { id: authReq.user.id },
         });
         if (!user) {
@@ -184,7 +181,7 @@ const updatePassword = async (req, res) => {
         }
         const saltRounds = 12;
         const hashedNewPassword = await bcryptjs_1.default.hash(newPassword, saltRounds);
-        await prisma.user.update({
+        await prismaSingleton_1.prisma.user.update({
             where: { id: authReq.user.id },
             data: { password: hashedNewPassword },
         });

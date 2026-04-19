@@ -1,12 +1,11 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.canModifyTasks = exports.canCreateTasks = exports.canDeleteProject = exports.canManageContributors = exports.canModifyProject = exports.isProjectOwner = exports.isProjectAdmin = exports.hasProjectAccess = exports.getUserProjectRole = void 0;
-const client_1 = require("@prisma/client");
+const prismaSingleton_1 = require("../lib/prismaSingleton");
 const types_1 = require("../types");
-const prisma = new client_1.PrismaClient();
 const getUserProjectRole = async (userId, projectId) => {
     try {
-        const project = await prisma.project.findUnique({
+        const project = await prismaSingleton_1.prisma.project.findUnique({
             where: { id: projectId },
             select: {
                 ownerId: true,

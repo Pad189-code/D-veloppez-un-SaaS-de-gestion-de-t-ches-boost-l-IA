@@ -3,9 +3,9 @@ export declare const getTaskComments: (taskId: string) => Promise<{
     content: string;
     createdAt: Date;
     author: {
-        email: string;
         name: string | null;
         id: string;
+        email: string;
     };
 }[]>;
 //# sourceMappingURL=taskComments.d.ts.map

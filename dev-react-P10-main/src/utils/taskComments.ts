@@ -1,6 +1,4 @@
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import { prisma } from "../lib/prismaSingleton";
 
 /**
  * Récupère les commentaires d'une tâche avec les détails des auteurs

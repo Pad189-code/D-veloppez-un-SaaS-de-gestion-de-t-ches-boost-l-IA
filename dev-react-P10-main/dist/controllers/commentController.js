@@ -1,11 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.deleteComment = exports.updateComment = exports.getComment = exports.getComments = exports.createComment = void 0;
-const client_1 = require("@prisma/client");
+const prismaSingleton_1 = require("../lib/prismaSingleton");
 const validation_1 = require("../utils/validation");
 const permissions_1 = require("../utils/permissions");
 const response_1 = require("../utils/response");
-const prisma = new client_1.PrismaClient();
 const createComment = async (req, res) => {
     try {
         const projectId = req.params.id || req.params.projectId;
@@ -28,7 +27,7 @@ const createComment = async (req, res) => {
             (0, response_1.sendError)(res, "Accès refusé au projet", "FORBIDDEN", 403);
             return;
         }
-        const task = await prisma.task.findFirst({
+        const task = await prismaSingleton_1.prisma.task.findFirst({
             where: {
                 id: taskId,
                 projectId,
@@ -38,7 +37,7 @@ const createComment = async (req, res) => {
             (0, response_1.sendError)(res, "Tâche non trouvée", "TASK_NOT_FOUND", 404);
             return;
         }
-        const comment = await prisma.comment.create({
+        const comment = await prismaSingleton_1.prisma.comment.create({
             data: {
                 content: content.trim(),
                 taskId,
@@ -82,7 +81,7 @@ const getComments = async (req, res) => {
             (0, response_1.sendError)(res, "Accès refusé au projet", "FORBIDDEN", 403);
             return;
         }
-        const task = await prisma.task.findFirst({
+        const task = await prismaSingleton_1.prisma.task.findFirst({
             where: {
                 id: taskId,
                 projectId,
@@ -92,7 +91,7 @@ const getComments = async (req, res) => {
             (0, response_1.sendError)(res, "Tâche non trouvée", "TASK_NOT_FOUND", 404);
             return;
         }
-        const comments = await prisma.comment.findMany({
+        const comments = await prismaSingleton_1.prisma.comment.findMany({
             where: { taskId },
             include: {
                 author: {
@@ -133,7 +132,7 @@ const getComment = async (req, res) => {
             (0, response_1.sendError)(res, "Accès refusé au projet", "FORBIDDEN", 403);
             return;
         }
-        const comment = await prisma.comment.findFirst({
+        const comment = await prismaSingleton_1.prisma.comment.findFirst({
             where: {
                 id: commentId,
                 taskId,
@@ -189,7 +188,7 @@ const updateComment = async (req, res) => {
             (0, response_1.sendError)(res, "Accès refusé au projet", "FORBIDDEN", 403);
             return;
         }
-        const existingComment = await prisma.comment.findFirst({
+        const existingComment = await prismaSingleton_1.prisma.comment.findFirst({
             where: {
                 id: commentId,
                 taskId,
@@ -206,7 +205,7 @@ const updateComment = async (req, res) => {
             (0, response_1.sendError)(res, "Vous ne pouvez modifier que vos propres commentaires", "FORBIDDEN", 403);
             return;
         }
-        const updatedComment = await prisma.comment.update({
+        const updatedComment = await prismaSingleton_1.prisma.comment.update({
             where: { id: commentId },
             data: {
                 content: content.trim(),
@@ -251,7 +250,7 @@ const deleteComment = async (req, res) => {
             (0, response_1.sendError)(res, "Accès refusé au projet", "FORBIDDEN", 403);
             return;
         }
-        const existingComment = await prisma.comment.findFirst({
+        const existingComment = await prismaSingleton_1.prisma.comment.findFirst({
             where: {
                 id: commentId,
                 taskId,
@@ -269,7 +268,7 @@ const deleteComment = async (req, res) => {
             (0, response_1.sendError)(res, "Vous ne pouvez supprimer que vos propres commentaires", "FORBIDDEN", 403);
             return;
         }
-        await prisma.comment.delete({
+        await prismaSingleton_1.prisma.comment.delete({
             where: { id: commentId },
         });
         (0, response_1.sendSuccess)(res, "Commentaire supprimé avec succès");

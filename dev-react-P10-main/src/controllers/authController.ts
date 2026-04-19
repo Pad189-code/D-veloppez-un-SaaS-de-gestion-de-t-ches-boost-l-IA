@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "../lib/prismaSingleton";
 import {
   RegisterRequest,
   LoginRequest,
@@ -22,14 +22,13 @@ import {
   sendServerError,
 } from "../utils/response";
 
-const prisma = new PrismaClient();
-
 /**
  * @swagger
  * /auth/register:
  *   post:
  *     summary: Inscription d'un nouvel utilisateur
  *     tags: [Authentification]
+ *     security: []
  *     requestBody:
  *       required: true
  *       content:
@@ -160,6 +159,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
  *   post:
  *     summary: Connexion d'un utilisateur
  *     tags: [Authentification]
+ *     security: []
  *     requestBody:
  *       required: true
  *       content:
@@ -316,6 +316,48 @@ export const getProfile = async (
 };
 
 /**
+ * @swagger
+ * /auth/profile:
+ *   put:
+ *     summary: Mettre à jour le profil de l'utilisateur connecté
+ *     tags: [Authentification]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *                 format: email
+ *     responses:
+ *       200:
+ *         description: Profil mis à jour
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/Success'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         user:
+ *                           $ref: '#/components/schemas/User'
+ *       400:
+ *         description: Données invalides
+ *       401:
+ *         description: Non authentifié
+ *       409:
+ *         description: Email déjà utilisé
+ */
+/**
  * Mettre à jour le profil de l'utilisateur connecté
  * PUT /auth/profile
  */
@@ -388,6 +430,37 @@ export const updateProfile = async (
   }
 };
 
+/**
+ * @swagger
+ * /auth/password:
+ *   put:
+ *     summary: Changer le mot de passe (utilisateur connecté)
+ *     tags: [Authentification]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - currentPassword
+ *               - newPassword
+ *             properties:
+ *               currentPassword:
+ *                 type: string
+ *               newPassword:
+ *                 type: string
+ *                 minLength: 6
+ *     responses:
+ *       200:
+ *         description: Mot de passe mis à jour
+ *       400:
+ *         description: Validation échouée
+ *       401:
+ *         description: Non authentifié ou mot de passe actuel incorrect
+ */
 /**
  * Mettre à jour le mot de passe de l'utilisateur connecté
  * PUT /auth/password

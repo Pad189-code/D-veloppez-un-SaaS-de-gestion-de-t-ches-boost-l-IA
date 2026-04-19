@@ -1,9 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getDashboardStats = exports.getProjectsWithTasks = exports.getAssignedTasks = void 0;
-const client_1 = require("@prisma/client");
+const prismaSingleton_1 = require("../lib/prismaSingleton");
 const response_1 = require("../utils/response");
-const prisma = new client_1.PrismaClient();
 const getAssignedTasks = async (req, res) => {
     try {
         const authReq = req;
@@ -11,7 +10,7 @@ const getAssignedTasks = async (req, res) => {
             (0, response_1.sendError)(res, "Utilisateur non authentifié", "UNAUTHORIZED", 401);
             return;
         }
-        const tasks = await prisma.task.findMany({
+        const tasks = await prismaSingleton_1.prisma.task.findMany({
             where: {
                 assignees: {
                     some: {
@@ -66,7 +65,7 @@ const getProjectsWithTasks = async (req, res) => {
             (0, response_1.sendError)(res, "Utilisateur non authentifié", "UNAUTHORIZED", 401);
             return;
         }
-        const projects = await prisma.project.findMany({
+        const projects = await prismaSingleton_1.prisma.project.findMany({
             where: {
                 tasks: {
                     some: {
@@ -139,7 +138,7 @@ const getDashboardStats = async (req, res) => {
             (0, response_1.sendError)(res, "Utilisateur non authentifié", "UNAUTHORIZED", 401);
             return;
         }
-        const assignedTasksCount = await prisma.task.count({
+        const assignedTasksCount = await prismaSingleton_1.prisma.task.count({
             where: {
                 assignees: {
                     some: {
@@ -150,7 +149,7 @@ const getDashboardStats = async (req, res) => {
         });
         const soon = new Date();
         soon.setDate(soon.getDate() + 7);
-        const urgentTasksCount = await prisma.task.count({
+        const urgentTasksCount = await prismaSingleton_1.prisma.task.count({
             where: {
                 assignees: {
                     some: {
@@ -164,7 +163,7 @@ const getDashboardStats = async (req, res) => {
                 },
             },
         });
-        const overdueTasksCount = await prisma.task.count({
+        const overdueTasksCount = await prismaSingleton_1.prisma.task.count({
             where: {
                 assignees: {
                     some: {
@@ -179,7 +178,7 @@ const getDashboardStats = async (req, res) => {
                 },
             },
         });
-        const tasksByStatus = await prisma.task.groupBy({
+        const tasksByStatus = await prismaSingleton_1.prisma.task.groupBy({
             by: ["status"],
             where: {
                 assignees: {
@@ -192,7 +191,7 @@ const getDashboardStats = async (req, res) => {
                 status: true,
             },
         });
-        const projectsCount = await prisma.project.count({
+        const projectsCount = await prismaSingleton_1.prisma.project.count({
             where: {
                 tasks: {
                     some: {

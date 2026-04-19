@@ -1,13 +1,12 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.deleteTask = exports.updateTask = exports.getTask = exports.getTasks = exports.createTask = void 0;
-const client_1 = require("@prisma/client");
+const prismaSingleton_1 = require("../lib/prismaSingleton");
 const validation_1 = require("../utils/validation");
 const permissions_1 = require("../utils/permissions");
 const response_1 = require("../utils/response");
 const taskAssignments_1 = require("../utils/taskAssignments");
 const taskComments_1 = require("../utils/taskComments");
-const prisma = new client_1.PrismaClient();
 const taskInclude = {
     project: {
         select: {
@@ -51,7 +50,7 @@ const createTask = async (req, res) => {
             (0, response_1.sendError)(res, "Accès refusé au projet", "FORBIDDEN", 403);
             return;
         }
-        const project = await prisma.project.findUnique({
+        const project = await prismaSingleton_1.prisma.project.findUnique({
             where: { id: projectId },
         });
         if (!project) {
@@ -70,7 +69,7 @@ const createTask = async (req, res) => {
                 return;
             }
         }
-        const task = await prisma.task.create({
+        const task = await prismaSingleton_1.prisma.task.create({
             data: {
                 title: title.trim(),
                 description: description?.trim() || null,
@@ -114,7 +113,7 @@ const getTasks = async (req, res) => {
             (0, response_1.sendError)(res, "Accès refusé au projet", "FORBIDDEN", 403);
             return;
         }
-        const tasks = await prisma.task.findMany({
+        const tasks = await prismaSingleton_1.prisma.task.findMany({
             where: { projectId },
             include: taskInclude,
             orderBy: { createdAt: "desc" },
@@ -152,7 +151,7 @@ const getTask = async (req, res) => {
             (0, response_1.sendError)(res, "Accès refusé au projet", "FORBIDDEN", 403);
             return;
         }
-        const task = await prisma.task.findFirst({
+        const task = await prismaSingleton_1.prisma.task.findFirst({
             where: {
                 id: taskId,
                 projectId,
@@ -211,7 +210,7 @@ const updateTask = async (req, res) => {
             (0, response_1.sendError)(res, "Vous n'avez pas les permissions pour modifier des tâches dans ce projet", "FORBIDDEN", 403);
             return;
         }
-        const existingTask = await prisma.task.findFirst({
+        const existingTask = await prismaSingleton_1.prisma.task.findFirst({
             where: {
                 id: taskId,
                 projectId,
@@ -241,7 +240,7 @@ const updateTask = async (req, res) => {
         if (dueDate !== undefined) {
             updateData.dueDate = dueDate ? new Date(dueDate) : null;
         }
-        await prisma.task.update({
+        await prismaSingleton_1.prisma.task.update({
             where: { id: taskId },
             data: {
                 ...updateData,
@@ -252,7 +251,7 @@ const updateTask = async (req, res) => {
                 }),
             },
         });
-        const updatedTask = await prisma.task.findUnique({
+        const updatedTask = await prismaSingleton_1.prisma.task.findUnique({
             where: { id: taskId },
             include: taskInclude,
         });
@@ -296,7 +295,7 @@ const deleteTask = async (req, res) => {
             (0, response_1.sendError)(res, "Vous n'avez pas les permissions pour supprimer des tâches dans ce projet", "FORBIDDEN", 403);
             return;
         }
-        const existingTask = await prisma.task.findFirst({
+        const existingTask = await prismaSingleton_1.prisma.task.findFirst({
             where: {
                 id: taskId,
                 projectId,
@@ -306,7 +305,7 @@ const deleteTask = async (req, res) => {
             (0, response_1.sendError)(res, "Tâche non trouvée", "TASK_NOT_FOUND", 404);
             return;
         }
-        await prisma.task.delete({
+        await prismaSingleton_1.prisma.task.delete({
             where: { id: taskId },
         });
         (0, response_1.sendSuccess)(res, "Tâche supprimée avec succès");

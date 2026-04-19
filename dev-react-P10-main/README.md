@@ -40,7 +40,7 @@ Vous pouvez visualiser votre base de données avec Prisma Studio :
 npm run db:studio
 ```
 
-Puis ouvrez **http://127.0.0.1:5556** dans le navigateur (port 5556 pour éviter un conflit avec un autre service sur 5555).
+Puis ouvrez **http://127.0.0.1:5555** dans le navigateur (port défini dans le script `db:studio`).
 
 ## Documentation
 

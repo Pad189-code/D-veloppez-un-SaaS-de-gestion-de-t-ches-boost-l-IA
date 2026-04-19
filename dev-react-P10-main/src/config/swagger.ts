@@ -58,11 +58,6 @@ const options = {
               format: "date-time",
               description: "Date de création du compte",
             },
-            updatedAt: {
-              type: "string",
-              format: "date-time",
-              description: "Date de dernière modification",
-            },
           },
           required: ["id", "email"],
         },
@@ -211,10 +206,6 @@ const options = {
               $ref: "#/components/schemas/User",
             },
             createdAt: {
-              type: "string",
-              format: "date-time",
-            },
-            updatedAt: {
               type: "string",
               format: "date-time",
             },

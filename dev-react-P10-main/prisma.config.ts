@@ -1,11 +1,12 @@
 import "dotenv/config";
 import { defineConfig } from "@prisma/config";
 
-/** Même logique que prisma/schema.prisma : SQLite sous prisma/dev.db (chemin relatif à la racine du projet). */
+/** SQLite : `DATABASE_URL` à la racine (`.env`), sinon `prisma/dev.db`. */
 const defaultSqliteUrl = "file:./prisma/dev.db";
 
 export default defineConfig({
+  schema: "prisma/schema.prisma",
   datasource: {
-    url: process.env.DATABASE_URL ?? defaultSqliteUrl,
+    url: process.env.DATABASE_URL?.trim() || defaultSqliteUrl,
   },
 });

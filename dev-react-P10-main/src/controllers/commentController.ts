@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "../lib/prismaSingleton";
 import {
   CreateCommentRequest,
   UpdateCommentRequest,
@@ -17,8 +17,48 @@ import {
   sendServerError,
 } from "../utils/response";
 
-const prisma = new PrismaClient();
-
+/**
+ * @swagger
+ * /projects/{id}/tasks/{taskId}/comments:
+ *   post:
+ *     summary: Ajouter un commentaire sur une tâche
+ *     tags: [Commentaires]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: taskId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - content
+ *             properties:
+ *               content:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Commentaire créé
+ *       400:
+ *         description: Validation échouée
+ *       401:
+ *         description: Non authentifié
+ *       403:
+ *         description: Accès au projet refusé
+ *       404:
+ *         description: Tâche introuvable
+ */
 /**
  * Créer un nouveau commentaire sur une tâche
  * POST /projects/:projectId/tasks/:taskId/comments
@@ -103,6 +143,35 @@ export const createComment = async (
 };
 
 /**
+ * @swagger
+ * /projects/{id}/tasks/{taskId}/comments:
+ *   get:
+ *     summary: Lister les commentaires d'une tâche
+ *     tags: [Commentaires]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: taskId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Liste des commentaires
+ *       401:
+ *         description: Non authentifié
+ *       403:
+ *         description: Accès refusé
+ *       404:
+ *         description: Tâche introuvable
+ */
+/**
  * Récupérer tous les commentaires d'une tâche
  * GET /projects/:projectId/tasks/:taskId/comments
  */
@@ -168,6 +237,105 @@ export const getComments = async (
   }
 };
 
+/**
+ * @swagger
+ * /projects/{id}/tasks/{taskId}/comments/{commentId}:
+ *   get:
+ *     summary: Récupérer un commentaire
+ *     tags: [Commentaires]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: taskId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: commentId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Commentaire trouvé
+ *       401:
+ *         description: Non authentifié
+ *       404:
+ *         description: Commentaire introuvable
+ *   put:
+ *     summary: Modifier son commentaire (auteur uniquement)
+ *     tags: [Commentaires]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: taskId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: commentId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - content
+ *             properties:
+ *               content:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Commentaire mis à jour
+ *       403:
+ *         description: Pas l'auteur du commentaire
+ *       404:
+ *         description: Introuvable
+ *   delete:
+ *     summary: Supprimer un commentaire (auteur ou modérateur tâches)
+ *     tags: [Commentaires]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: taskId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: commentId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Supprimé
+ *       403:
+ *         description: Interdit
+ *       404:
+ *         description: Introuvable
+ */
 /**
  * Récupérer un commentaire spécifique
  * GET /projects/:projectId/tasks/:taskId/comments/:commentId

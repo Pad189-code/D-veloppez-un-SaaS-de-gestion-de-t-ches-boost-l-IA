@@ -1,12 +1,11 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getTaskAssignments = exports.updateTaskAssignments = exports.validateProjectMembers = void 0;
-const client_1 = require("@prisma/client");
-const prisma = new client_1.PrismaClient();
+const prismaSingleton_1 = require("../lib/prismaSingleton");
 const validateProjectMembers = async (projectId, userIds) => {
     if (userIds.length === 0)
         return true;
-    const project = await prisma.project.findUnique({
+    const project = await prismaSingleton_1.prisma.project.findUnique({
         where: { id: projectId },
         select: {
             ownerId: true,
@@ -26,7 +25,7 @@ const validateProjectMembers = async (projectId, userIds) => {
 };
 exports.validateProjectMembers = validateProjectMembers;
 const updateTaskAssignments = async (taskId, assigneeIds) => {
-    await prisma.task.update({
+    await prismaSingleton_1.prisma.task.update({
         where: { id: taskId },
         data: {
             assignees: {
@@ -37,7 +36,7 @@ const updateTaskAssignments = async (taskId, assigneeIds) => {
 };
 exports.updateTaskAssignments = updateTaskAssignments;
 const getTaskAssignments = async (taskId) => {
-    const task = await prisma.task.findUnique({
+    const task = await prismaSingleton_1.prisma.task.findUnique({
         where: { id: taskId },
         include: {
             assignees: {

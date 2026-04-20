@@ -8,7 +8,8 @@ import {
 import {
   hasProjectAccess,
   canCreateTasks,
-  canModifyTasks,
+  canEditTasks,
+  canDeleteTasks,
 } from "../utils/permissions";
 import {
   sendSuccess,
@@ -483,7 +484,7 @@ export const updateTask = async (
       return;
     }
 
-    const canModify = await canModifyTasks(authReq.user.id, projectId);
+    const canModify = await canEditTasks(authReq.user.id, projectId);
     if (!canModify) {
       sendError(
         res,
@@ -604,7 +605,7 @@ export const deleteTask = async (
       return;
     }
 
-    const canModify = await canModifyTasks(authReq.user.id, projectId);
+    const canModify = await canDeleteTasks(authReq.user.id, projectId);
     if (!canModify) {
       sendError(
         res,

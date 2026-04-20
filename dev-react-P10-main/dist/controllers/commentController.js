@@ -263,7 +263,7 @@ const deleteComment = async (req, res) => {
             (0, response_1.sendError)(res, "Commentaire non trouvé", "COMMENT_NOT_FOUND", 404);
             return;
         }
-        const canModify = await (0, permissions_1.canModifyTasks)(authReq.user.id, projectId);
+        const canModify = await (0, permissions_1.canDeleteTasks)(authReq.user.id, projectId);
         if (existingComment.authorId !== authReq.user.id && !canModify) {
             (0, response_1.sendError)(res, "Vous ne pouvez supprimer que vos propres commentaires", "FORBIDDEN", 403);
             return;

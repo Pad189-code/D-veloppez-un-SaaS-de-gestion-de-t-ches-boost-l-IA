@@ -73,15 +73,15 @@ export const canManageContributors = async (
   return await isProjectAdmin(userId, projectId);
 };
 
-/** Suppression du projet : propriétaire uniquement */
+/** Suppression du projet : propriétaire ou admin */
 export const canDeleteProject = async (
   userId: string,
   projectId: string,
 ): Promise<boolean> => {
-  return await isProjectOwner(userId, projectId);
+  return await isProjectAdmin(userId, projectId);
 };
 
-/** Tâches : tout utilisateur avec accès au projet (propriétaire, admin, contributeur) */
+/** Création de tâche : propriétaire, admin ou contributeur */
 export const canCreateTasks = async (
   userId: string,
   projectId: string,
@@ -89,7 +89,16 @@ export const canCreateTasks = async (
   return await hasProjectAccess(userId, projectId);
 };
 
-export const canModifyTasks = async (
+/** Édition d'une tâche : propriétaire ou admin */
+export const canEditTasks = async (
+  userId: string,
+  projectId: string,
+): Promise<boolean> => {
+  return await isProjectAdmin(userId, projectId);
+};
+
+/** Suppression d'une tâche : propriétaire, admin ou contributeur */
+export const canDeleteTasks = async (
   userId: string,
   projectId: string,
 ): Promise<boolean> => {

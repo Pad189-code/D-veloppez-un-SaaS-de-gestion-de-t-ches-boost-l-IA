@@ -7,5 +7,6 @@ export declare const canModifyProject: (userId: string, projectId: string) => Pr
 export declare const canManageContributors: (userId: string, projectId: string) => Promise<boolean>;
 export declare const canDeleteProject: (userId: string, projectId: string) => Promise<boolean>;
 export declare const canCreateTasks: (userId: string, projectId: string) => Promise<boolean>;
-export declare const canModifyTasks: (userId: string, projectId: string) => Promise<boolean>;
+export declare const canEditTasks: (userId: string, projectId: string) => Promise<boolean>;
+export declare const canDeleteTasks: (userId: string, projectId: string) => Promise<boolean>;
 //# sourceMappingURL=permissions.d.ts.map

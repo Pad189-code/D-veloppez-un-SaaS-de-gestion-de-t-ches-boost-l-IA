@@ -205,7 +205,7 @@ const updateTask = async (req, res) => {
             (0, response_1.sendError)(res, "Accès refusé au projet", "FORBIDDEN", 403);
             return;
         }
-        const canModify = await (0, permissions_1.canModifyTasks)(authReq.user.id, projectId);
+        const canModify = await (0, permissions_1.canEditTasks)(authReq.user.id, projectId);
         if (!canModify) {
             (0, response_1.sendError)(res, "Vous n'avez pas les permissions pour modifier des tâches dans ce projet", "FORBIDDEN", 403);
             return;
@@ -290,7 +290,7 @@ const deleteTask = async (req, res) => {
             (0, response_1.sendError)(res, "Accès refusé au projet", "FORBIDDEN", 403);
             return;
         }
-        const canModify = await (0, permissions_1.canModifyTasks)(authReq.user.id, projectId);
+        const canModify = await (0, permissions_1.canDeleteTasks)(authReq.user.id, projectId);
         if (!canModify) {
             (0, response_1.sendError)(res, "Vous n'avez pas les permissions pour supprimer des tâches dans ce projet", "FORBIDDEN", 403);
             return;

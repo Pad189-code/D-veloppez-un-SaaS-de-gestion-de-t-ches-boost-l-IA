@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.canModifyTasks = exports.canCreateTasks = exports.canDeleteProject = exports.canManageContributors = exports.canModifyProject = exports.isProjectOwner = exports.isProjectAdmin = exports.hasProjectAccess = exports.getUserProjectRole = void 0;
+exports.canDeleteTasks = exports.canEditTasks = exports.canCreateTasks = exports.canDeleteProject = exports.canManageContributors = exports.canModifyProject = exports.isProjectOwner = exports.isProjectAdmin = exports.hasProjectAccess = exports.getUserProjectRole = void 0;
 const prismaSingleton_1 = require("../lib/prismaSingleton");
 const types_1 = require("../types");
 const getUserProjectRole = async (userId, projectId) => {
@@ -55,15 +55,19 @@ const canManageContributors = async (userId, projectId) => {
 };
 exports.canManageContributors = canManageContributors;
 const canDeleteProject = async (userId, projectId) => {
-    return await (0, exports.isProjectOwner)(userId, projectId);
+    return await (0, exports.isProjectAdmin)(userId, projectId);
 };
 exports.canDeleteProject = canDeleteProject;
 const canCreateTasks = async (userId, projectId) => {
     return await (0, exports.hasProjectAccess)(userId, projectId);
 };
 exports.canCreateTasks = canCreateTasks;
-const canModifyTasks = async (userId, projectId) => {
+const canEditTasks = async (userId, projectId) => {
+    return await (0, exports.isProjectAdmin)(userId, projectId);
+};
+exports.canEditTasks = canEditTasks;
+const canDeleteTasks = async (userId, projectId) => {
     return await (0, exports.hasProjectAccess)(userId, projectId);
 };
-exports.canModifyTasks = canModifyTasks;
+exports.canDeleteTasks = canDeleteTasks;
 //# sourceMappingURL=permissions.js.map

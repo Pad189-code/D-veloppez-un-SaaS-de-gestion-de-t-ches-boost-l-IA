@@ -9,7 +9,7 @@ import {
   validateCreateCommentData,
   validateUpdateCommentData,
 } from "../utils/validation";
-import { hasProjectAccess, canModifyTasks } from "../utils/permissions";
+import { hasProjectAccess, canDeleteTasks } from "../utils/permissions";
 import {
   sendSuccess,
   sendError,
@@ -537,7 +537,7 @@ export const deleteComment = async (
     }
 
     // Vérifier que l'utilisateur est l'auteur du commentaire ou a les permissions de modération
-    const canModify = await canModifyTasks(authReq.user.id, projectId);
+    const canModify = await canDeleteTasks(authReq.user.id, projectId);
     if (existingComment.authorId !== authReq.user.id && !canModify) {
       sendError(
         res,

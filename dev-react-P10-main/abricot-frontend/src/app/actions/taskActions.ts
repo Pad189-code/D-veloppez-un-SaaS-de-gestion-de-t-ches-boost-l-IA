@@ -183,6 +183,10 @@ export async function deleteTaskAction(input: {
 }
 
 type TaskDraft = { title: string; description: string };
+const MIN_TITLE_LEN = 2;
+const MAX_AI_TASKS = 3;
+const DUPLICATE_SIMILARITY_THRESHOLD = 0.58;
+const EXISTING_TASK_SCAN_LIMIT = 400;
 
 /**
  * Modèle Mistral (API chat completions). Voir https://docs.mistral.ai/api/#tag/chat
@@ -204,6 +208,117 @@ function parseTasksJson(text: string): TaskDraft[] {
     title: String(t.title ?? '').trim() || 'Tâche',
     description: String(t.description ?? '').trim() || '',
   }));
+}
+
+function normalizeLooseText(value: string): string {
+  return value
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '')
+    .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function tokenSet(value: string): Set<string> {
+  const tokens = normalizeLooseText(value)
+    .split(' ')
+    .filter((t) => t.length > 2);
+  return new Set(tokens);
+}
+
+function jaccard(a: Set<string>, b: Set<string>): number {
+  if (a.size === 0 || b.size === 0) return 0;
+  let intersection = 0;
+  for (const t of a) {
+    if (b.has(t)) intersection += 1;
+  }
+  const union = a.size + b.size - intersection;
+  return union === 0 ? 0 : intersection / union;
+}
+
+function sanitizeAndDedupeDrafts(
+  drafts: TaskDraft[],
+  existingTitles: string[],
+  maxTasks: number = MAX_AI_TASKS,
+): TaskDraft[] {
+  const existingSets = existingTitles.map((t) => tokenSet(t));
+  const kept: TaskDraft[] = [];
+  const keptSets: Set<string>[] = [];
+
+  for (const draft of drafts) {
+    const title = draft.title.trim();
+    const description = draft.description.trim();
+    if (title.length < MIN_TITLE_LEN) continue;
+
+    const currentSet = tokenSet(title);
+    if (currentSet.size === 0) continue;
+
+    const nearExisting = existingSets.some((s) => jaccard(currentSet, s) >= 0.6);
+    if (nearExisting) continue;
+
+    const nearKept = keptSets.some((s) => jaccard(currentSet, s) >= 0.72);
+    if (nearKept) continue;
+
+    kept.push({ title, description });
+    keptSets.push(currentSet);
+    if (kept.length >= maxTasks) break;
+  }
+
+  return kept;
+}
+
+function draftFingerprint(title: string, description: string): Set<string> {
+  return tokenSet(`${title} ${description}`);
+}
+
+async function removeNearExistingProjectTasks(
+  projectId: string,
+  drafts: TaskDraft[],
+): Promise<{ kept: TaskDraft[]; removedCount: number }> {
+  if (drafts.length === 0) {
+    return { kept: [], removedCount: 0 };
+  }
+
+  const existing = await prisma.task.findMany({
+    where: { projectId },
+    select: { title: true, description: true },
+    orderBy: { createdAt: 'desc' },
+    take: EXISTING_TASK_SCAN_LIMIT,
+  });
+
+  if (existing.length === 0) {
+    return { kept: drafts, removedCount: 0 };
+  }
+
+  const existingTitleNorm = new Set(existing.map((e) => normalizeLooseText(e.title)));
+  const existingFingerprints = existing.map((e) => draftFingerprint(e.title, e.description ?? ''));
+
+  const kept: TaskDraft[] = [];
+  let removedCount = 0;
+
+  for (const draft of drafts) {
+    const titleNorm = normalizeLooseText(draft.title);
+    if (existingTitleNorm.has(titleNorm)) {
+      removedCount += 1;
+      continue;
+    }
+
+    const fp = draftFingerprint(draft.title, draft.description);
+    const tooClose = existingFingerprints.some((existingFp) => {
+      const score = jaccard(fp, existingFp);
+      return score >= DUPLICATE_SIMILARITY_THRESHOLD;
+    });
+
+    if (tooClose) {
+      removedCount += 1;
+      continue;
+    }
+
+    kept.push(draft);
+  }
+
+  return { kept, removedCount };
 }
 
 function buildLocalTasks(project: { name: string; description: string | null }): TaskDraft[] {
@@ -269,6 +384,7 @@ export async function generateTasksWithAI(projectId: string) {
       [project.description?.trim(), project.name].filter(Boolean).join('\n') || project.name;
     const ragLines = await retrieveProjectTasksForRag(projectId, seedForRag);
     const ragBlock = formatRagBlockForPrompt(ragLines);
+    const existingTitles = ragLines.map((l) => l.title);
 
     const prompt = `${ragBlock}
 Agis comme un chef de projet. Pour le projet "${project.name}" (${project.description || 'Pas de description'}), génère exactement 3 tâches prioritaires complémentaires (sans dupliquer les tâches déjà listées dans le contexte ci-dessus). Réponds uniquement sous forme de tableau JSON pur : [{"title": "Titre", "description": "Détails"}]`;
@@ -288,8 +404,22 @@ Agis comme un chef de projet. Pour le projet "${project.name}" (${project.descri
       tasksData = buildLocalTasks(project);
     }
 
+    const cleanedDrafts = sanitizeAndDedupeDrafts(tasksData, existingTitles, MAX_AI_TASKS);
+    const fallbackDrafts = cleanedDrafts.length > 0 ? cleanedDrafts : buildLocalTasks(project);
+    const { kept: finalDrafts, removedCount } = await removeNearExistingProjectTasks(
+      projectId,
+      fallbackDrafts,
+    );
+
+    if (finalDrafts.length === 0) {
+      return {
+        error:
+          'Les propositions IA sont trop proches des tâches déjà présentes. Reformulez la demande avec un objectif plus spécifique.',
+      };
+    }
+
     await prisma.task.createMany({
-      data: tasksData.map((t) => ({
+      data: finalDrafts.map((t) => ({
         title: t.title,
         description: t.description,
         projectId,
@@ -304,7 +434,9 @@ Agis comme un chef de projet. Pour le projet "${project.name}" (${project.descri
       message:
         source === 'local'
           ? 'Tâches ajoutées (mode hors API : définissez MISTRAL_API_KEY dans .env.local).'
-          : undefined,
+          : removedCount > 0 || finalDrafts.length < MAX_AI_TASKS
+            ? 'Certaines propositions trop proches des tâches existantes ont été écartées.'
+            : undefined,
     };
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Erreur inconnue';
@@ -384,9 +516,12 @@ Consignes :
     tasksData = buildLocalTasks(project);
   }
 
+  const cleanedDrafts = sanitizeAndDedupeDrafts(tasksData, ragContextTitles, MAX_AI_TASKS);
+  const finalTasks = cleanedDrafts.length > 0 ? cleanedDrafts : buildLocalTasks(project);
+
   return {
     success: true,
-    tasks: tasksData.map((t) => ({
+    tasks: finalTasks.map((t) => ({
       title: t.title,
       description: t.description,
     })),
@@ -421,15 +556,37 @@ export async function commitAiTaskDrafts(projectId: string, drafts: AiTaskDraftI
     return { error: access.error };
   }
 
+  const normalizedDrafts: TaskDraft[] = rows.map((r) => ({
+    title: r.title,
+    description: r.description ?? '',
+  }));
+  const { kept: filteredDrafts, removedCount } = await removeNearExistingProjectTasks(
+    projectId,
+    normalizedDrafts,
+  );
+
+  if (filteredDrafts.length === 0) {
+    return {
+      error:
+        'Aucune tâche ajoutée : les propositions sont trop proches de tâches déjà existantes dans ce projet.',
+    };
+  }
+
   await prisma.task.createMany({
-    data: rows.map((t) => ({
+    data: filteredDrafts.map((t) => ({
       title: t.title,
-      description: t.description,
+      description: t.description || null,
       projectId,
       status: 'TODO',
     })),
   });
 
   revalidatePath(`/projets/${projectId}`);
-  return { success: true as const };
+  return {
+    success: true as const,
+    message:
+      removedCount > 0
+        ? `${removedCount} proposition(s) trop proche(s) de l'existant ont été ignorées.`
+        : undefined,
+  };
 }
